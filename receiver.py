@@ -7,47 +7,56 @@ private_key = RSA.importKey(open("YPrivate.key").read())
 
 Kxy = open("symmetric.key", "rb").read()
 
+print("--------------------------------------")
+
 input_file = input("Input the name of the message file: ")
- 
+
+print("\nReading from message.rsacipher...")
 with open("message.rsacipher", "rb") as cipher_file:
     ciphertext = cipher_file.read()
-print("Ciphertext: ", len(ciphertext))
 
-# input_file = input("Input the name of the message file: ")
+print("Length of Ciphertext:", len(ciphertext))
 
 def rsa_decrypt(ciphertext, private_key):
     cipher = PKCS1_OAEP.new(private_key)
-    length = private_key.size_in_bytes() 
-    print("Length: ", length)
+    length = private_key.size_in_bytes()
 
-    with open("decrypted.dd", "ab") as rsa_decrypt:
+    with open("message.add-msg", "ab") as rsa_decrypt:
 
         for i in range(0, len(ciphertext), length):
             decrypted_block = cipher.decrypt(ciphertext[i: i + length])
             rsa_decrypt.write(decrypted_block)
- 
+
 rsa_decrypt(ciphertext, private_key)
+print("\nDecrypted message.rsacipher\n")
 
-with open("decrypted.dd", "rb") as hash_read:
-    hash_block = hash_read.read(32)
+with open("message.add-msg", "rb") as hash_read:
+    auth_dd = hash_read.read(32)
     message = hash_read.read()
-    print("Mes Len: ", len(message))
 
-print("HB:     ", hash_block)
-print("HB size:", len(hash_block))
+#print("Authentic Digital Digest: ", auth_dd, "\n")
+with open(input_file, "wb") as file:
+    file.write(message)
 
 cipher = AES.new(Kxy, AES.MODE_ECB)
-decrypted = cipher.decrypt(hash_block)
+digital_digest = cipher.decrypt(auth_dd)
 
-print("SHA256: ", decrypted)
+with open("message.dd","wb") as dd_file:
+    dd_file.write(digital_digest)
+
+print("Digital Digest:")
+hex_ddigest = digital_digest.hex()
+for i in range(0, len(hex_ddigest), 16):
+    print(hex_ddigest[i: i + 2], ' ', hex_ddigest[i + 2 : i + 4], ' ', hex_ddigest[i + 4 : i + 6], ' ', hex_ddigest[i + 6 : i + 8], ' ',
+      hex_ddigest[i+8:i+10],' ', hex_ddigest[i+10:i+12],' ', hex_ddigest[i+12:i+14],' ', hex_ddigest[i+14:i+16])
+
+print("Length of decrypted message:", len(message))
 
 h = hashlib.sha256()
 h.update(message)
 
-if (h.digest() == decrypted):
-    print("Digital Digest Authentication Passed")
+if (h.digest() == digital_digest):
+    print("\nDigital Digest Authentication Passed")
 else:
-    print("Digital Digest Authentication Fails")
+    print("\nDigital Digest Authentication Fails")
 
-with open(input_file, "w") as file:
-    file.write(message.decode('utf-8'))

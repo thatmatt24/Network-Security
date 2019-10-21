@@ -1,31 +1,13 @@
 from Crypto.PublicKey import RSA
-# from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Util import number
 from Crypto import Random
+import sys, os, shutil
 
 def main():
 
     key_size = 1024
     random_gen = Random.new().read
 
-    # xkey = RSA.generate(1024)
-    # ykey = RSA.generate(1024)
-
-    # xpub = xkey.publickey().exportKey()
-    # xpri = xkey.exportKey()
-    # file_out = open("XPrivate.key", "wb")
-    # file_out.write(xpri)
-    # pub_out = open("XPublic.key", "wb")
-    # pub_out.write(xpub)
-
-    # ypub = ykey.publickey().exportKey()
-    # ypri = ykey.exportKey()
-    # file_outer = open("YPrivate.key", "wb")
-    # file_outer.write(ypri)
-    # ypub_out = open("YPublic.key","wb")
-    # ypub_out.write(ypub)
-
-    
     xpri = RSA.generate(key_size, random_gen)
     ypri = RSA.generate(key_size, random_gen)
     xpub = xpri.publickey()
@@ -51,16 +33,25 @@ def main():
     YPub.close()
     YPri.close()
 
-    with open("YPrivate.key", "rb") as key:
-        print(key.read())
-        
+    print("--------------------------------------")
     kxy = input("Enter symmetric key Kxy (16 char - 128 bit): ")
-    print(repr(kxy))
+    if(len(kxy) != 16):
+        print("Symmetric key must be 16 digits. Modifying input to correct size.\n")
+
+        if(len(kxy) < 16):
+            kxy = '1234567890123456'
+        else:
+            kxy = kxy[0:16]
+
     Kxy = open("symmetric.key", "w")
     Kxy.write(kxy)
-
     Kxy.close()
 
+    print("Copying symmetric.key to:", shutil.copy('symmetric.key', '../Sender/symmetric.key'))
+    print("Copying symmetric.key to:", shutil.copy('symmetric.key', '../Receiver/symmetric.key'))
+    print("Copying YPublic.key to:", shutil.copy('YPublic.key', '../Sender/YPublic.key'))
+    print("Copying YPrivate.key to:", shutil.copy('YPrivate.key', '../Receiver/YPrivate.key'))
+    print("\n...done")
 
 if __name__ == "__main__":
     main()
